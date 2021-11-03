@@ -147,6 +147,7 @@ public class AgentImpl implements com.newrelic.agent.bridge.Agent {
     }
 
     public Map<String, String> getLinkingMetadata() {
+        Agent.LOG.log(Level.INFO, "Agent:Get linking metadata...");
         Map<String, String> linkingMetadata = new ConcurrentHashMap<>();
 
         TraceMetadata traceMetadata = getTraceMetadata();
@@ -157,13 +158,17 @@ public class AgentImpl implements com.newrelic.agent.bridge.Agent {
         linkingMetadata.put("span.id", spanId);
 
         AgentConfig agentConfig = ServiceFactory.getConfigService().getDefaultAgentConfig();
-        linkingMetadata.put("hostname", getLinkingMetaHostname(agentConfig));
+        String hostname = getLinkingMetaHostname(agentConfig);
+        linkingMetadata.put("hostname", hostname);
+        Agent.LOG.log(Level.INFO, "Agent:Put trace.id=\"{0}\", span.id=\"{1}\" and hostname=\"{2}\"", traceId, spanId, hostname);
         try {
             String entityGuid = ServiceFactory.getRPMService().getEntityGuid();
             if (!entityGuid.isEmpty()) {
-                linkingMetadata.put("entity.name", agentConfig.getApplicationName());
+                String entityName = agentConfig.getApplicationName();
+                linkingMetadata.put("entity.name", entityName);
                 linkingMetadata.put("entity.type", "SERVICE");
                 linkingMetadata.put("entity.guid", entityGuid);
+                Agent.LOG.log(Level.INFO, "Agent:Put entity.name=\"{0}\", entity.type=\"{1}\" and entity.guid=\"{2}\"", entityName, "SERVICE", entityGuid);
             }
         } catch (NullPointerException ignored) {
             // it's possible to call getLinkingMetadata in the premain before RPMService has been initialized which will NPE
